@@ -1,0 +1,636 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "__init__.py",
+			"settings":
+			{
+				"buffer_size": 0,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/THZNN.cpp",
+			"settings":
+			{
+				"buffer_size": 550,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "CMakeLists.txt",
+			"settings":
+			{
+				"buffer_size": 3961,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/generic/THZNN.cpp",
+			"settings":
+			{
+				"buffer_size": 23142,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/THZNN.hpp",
+			"settings":
+			{
+				"buffer_size": 5524,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#include <TH/TH.h>\n#include <THC/THC.h>\n#include <thrust/fill.h>\n#include <thrust/functional.h>\n#include <thrust/host_vector.h>\n#include <thrust/device_vector.h>\n#include <thrust/device_ptr.h>\n#include <thrust/reduce.h>\n#include <thrust/inner_product.h>\n#include <thrust/iterator/zip_iterator.h>\n\n#if CUDA_VERSION >= 7000\n#include <thrust/system/cuda/execution_policy.h>\n#endif\n\n#include <stdlib.h>\n\nextern THCState *state;\n\n#define THNN_(NAME) TH_CONCAT_3(THNN_, Real, NAME)\n\n#include \"generic/THZNN.c\"\n#include \"THC/THCGenerateComplexTypes.h\"",
+			"file": "lib/THZNN.c",
+			"file_size": 544,
+			"file_write_time": 131430629914497586,
+			"settings":
+			{
+				"buffer_size": 544,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "setup.py",
+			"settings":
+			{
+				"buffer_size": 732,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build.py",
+			"settings":
+			{
+				"buffer_size": 655,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)\nCMAKE_POLICY(VERSION 2.8)\n\nSET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})\n\nSET(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)\nOPTION(NDEBUG \"disable asserts (WARNING: this may result in invalid memory accesses)\")\nIF(NOT NDEBUG)\n  MESSAGE(STATUS \"Removing -DNDEBUG from compile flags\")\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_C_FLAGS \"\" ${CMAKE_C_FLAGS})\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_C_FLAGS_DEBUG \"\" ${CMAKE_C_FLAGS_DEBUG})\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_C_FLAGS_RELEASE \"\" ${CMAKE_C_FLAGS_RELEASE})\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_CXX_FLAGS \"\" ${CMAKE_CXX_FLAGS})\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_CXX_FLAGS_DEBUG \"\" ${CMAKE_CXX_FLAGS_DEBUG})\n  STRING(REPLACE \"-DNDEBUG\" \"\" CMAKE_CXX_FLAGS_RELEASE \"\" ${CMAKE_CXX_FLAGS_RELEASE})\nENDIF()\n\nIF(NOT Torch_FOUND)\n  FIND_PACKAGE(Torch)\nENDIF()\n\nIF(NOT TH_LIBRARIES)\n  SET(TH_LIBRARIES \"TH\")\nENDIF(NOT TH_LIBRARIES)\nMESSAGE(STATUS \"TH_LIBRARIES: ${TH_LIBRARIES}\")\n\nIF(NOT CUDA_FOUND)\n  FIND_PACKAGE(CUDA 5.5 REQUIRED)\nENDIF()\n\nif(CMAKE_CXX_COMPILER_ID STREQUAL \"GNU\")\n  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER \"4.9.3\")\n    if(CUDA_VERSION VERSION_LESS \"8.0\")\n      MESSAGE(STATUS \"Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags\")\n      set(CMAKE_CXX_FLAGS \"${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__\")\n    endif(CUDA_VERSION VERSION_LESS \"8.0\")\n  endif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER \"4.9.3\")\nendif(CMAKE_CXX_COMPILER_ID STREQUAL \"GNU\")\n\nIF(CMAKE_CXX_COMPILER_ID STREQUAL \"GNU\")\n  IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER \"4.7\" OR CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL \"4.7\" )\n    SET(CXX_VERSION \"c++11\")\n  ELSE()\n    SET(CXX_VERSION \"c++0x\")\n  ENDIF()\n  SET_SOURCE_FILES_PROPERTIES(\n    THCTensorRandom.cpp\n    THCCachingAllocator.cpp\n    THCCachingHostAllocator.cpp\n    THCStream.cpp\n    PROPERTIES COMPILE_FLAGS -std=${CXX_VERSION})\nELSE()\n  SET(CMAKE_CXX_STANDARD 11)\nENDIF()\n\nINCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})\nINCLUDE_DIRECTORIES(\"${CUDA_SDK_ROOT_DIR}/common/inc\")\n\n# Detect CUDA architecture and get best NVCC flags\nIF(NOT COMMAND CUDA_SELECT_NVCC_ARCH_FLAGS OR MSVC)\n  INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/select_compute_arch.cmake)\nENDIF()\nLIST(APPEND CUDA_NVCC_FLAGS $ENV{TORCH_NVCC_FLAGS})\nCUDA_SELECT_NVCC_ARCH_FLAGS(NVCC_FLAGS_EXTRA $ENV{TORCH_CUDA_ARCH_LIST})\nLIST(APPEND CUDA_NVCC_FLAGS ${NVCC_FLAGS_EXTRA})\n\nIF(NOT THC_INSTALL_BIN_SUBDIR\n    OR NOT THC_INSTALL_LIB_SUBDIR\n    OR NOT THC_INSTALL_INCLUDE_SUBDIR\n    OR NOT THC_INSTALL_CMAKE_SUBDIR)\n\n  INCLUDE_DIRECTORIES(${TH_INCLUDE_PATH} ${TH_INCLUDE_PATH}/TH ${TH_INCLUDE_PATH}/THC)\n  LINK_DIRECTORIES(${TH_LIB_PATH})\n\n  IF(Torch_INSTALL_BIN_SUBDIR)\n    SET(THC_INSTALL_BIN_SUBDIR ${Torch_INSTALL_BIN_SUBDIR})\n    SET(THC_INSTALL_LIB_SUBDIR ${Torch_INSTALL_LIB_SUBDIR})\n    SET(THC_INSTALL_INCLUDE_SUBDIR ${Torch_INSTALL_INCLUDE_SUBDIR})\n    SET(THC_INSTALL_CMAKE_SUBDIR ${Torch_INSTALL_CMAKE_SUBDIR})\n  ELSE(Torch_INSTALL_BIN_SUBDIR)\n    # not installing in a Torch context, so Torch_INSTALL_BIN_SUBDIR is not available\n    SET(THC_INSTALL_BIN_SUBDIR \"bin\" CACHE PATH \"THC install binary subdirectory\")\n    SET(THC_INSTALL_LIB_SUBDIR \"lib\" CACHE PATH \"THC install library subdirectory\")\n    SET(THC_INSTALL_INCLUDE_SUBDIR \"include\" CACHE PATH \"THC install include subdirectory\")\n    SET(THC_INSTALL_CMAKE_SUBDIR \"share/cmake/THC\" CACHE PATH \"THC install cmake subdirectory\")\n  ENDIF(Torch_INSTALL_BIN_SUBDIR)\n\nENDIF()\n\nINCLUDE_DIRECTORIES(\"${CMAKE_CURRENT_SOURCE_DIR}\")\nINCLUDE_DIRECTORIES(\"${CMAKE_CURRENT_BINARY_DIR}\")\nINCLUDE_DIRECTORIES(./lib)\n\nSET(src\n    lib/THZNN.cpp\n    )\n\nMESSAGE(STATUS \"got cuda version \" ${CUDA_VERSION})\nMESSAGE(STATUS \"CUDA_NVCC_FLAGS: ${CUDA_NVCC_FLAGS}\")\nCUDA_ADD_LIBRARY(THZNN SHARED ${src} ${src-cuda})\n\nINSTALL(TARGETS THZNN\nRUNTIME DESTINATION \"${THC_INSTALL_BIN_SUBDIR}\"\nLIBRARY DESTINATION \"${THC_INSTALL_LIB_SUBDIR}\"\nARCHIVE DESTINATION \"${THC_INSTALL_LIB_SUBDIR}\")",
+			"file": "CMakelists.txt",
+			"file_size": 4003,
+			"file_write_time": 131431206997213468,
+			"settings":
+			{
+				"buffer_size": 4002,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nn/PoissonLikelihood.py",
+			"settings":
+			{
+				"buffer_size": 1,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "README.md",
+			"settings":
+			{
+				"buffer_size": 80,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/philipp/projects/scikit-pr",
+		"/home/philipp/projects/scikit-pr/lib",
+		"/home/philipp/projects/scikit-pr/lib/generic",
+		"/home/philipp/projects/scikit-pr/nn"
+	],
+	"file_history":
+	[
+		"/home/philipp/projects/scikit-pr/lib/generic/THZNN.h",
+		"/home/philipp/projects/scikit-pr/lib/THZNN.h"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			"TH_API",
+			"THPartTensor",
+			"THCPartTensor",
+			" ",
+			"part",
+			"THCCudaDoubleTensor",
+			"THCCudaZFloatTensor",
+			"THfloatTensor",
+			"part",
+			"THCState *state,",
+			"THCCudaTensor",
+			"THCState *state, ",
+			"TH_API",
+			"THNN_CudaZFloat",
+			"THCCudaZFloatTensor",
+			"THCCudaTensor",
+			"THCTensor",
+			"THCPartTensor",
+			"Cuda",
+			")(",
+			"_(",
+			"THCPartTensor_resizeAs",
+			"THCTensor_resizeAs",
+			"THCTensor_data",
+			"THCTensor_newContiguous",
+			"THCTensor_free",
+			"THCPartTensor_newContiguous",
+			"set1d",
+			"THCPartTensor_free",
+			"THCPartTensor_data",
+			"pointwiseApply3",
+			"nElement",
+			"checkGPU",
+			"THZCudaTensor",
+			"ccx",
+			"THCudaTensor",
+			"float",
+			"THCudaTensor",
+			"THZCudaTensor"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "__init__.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 0,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "lib/THZNN.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 550,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								466,
+								466
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "CMakeLists.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3961,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2552,
+								2552
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 540.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "lib/generic/THZNN.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23142,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								470,
+								470
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "lib/THZNN.hpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5524,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								14,
+								14
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "lib/THZNN.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 544,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								50,
+								50
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/C++/C.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "setup.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 732,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								732,
+								732
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "build.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 655,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								609,
+								609
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "CMakelists.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4002,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2591,
+								2591
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 810.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "nn/PoissonLikelihood.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1,
+								1
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "README.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 80,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								80,
+								80
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "scikit-pr.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 230.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
